@@ -1,8 +1,8 @@
 # annoying mac files 
 .DS_Store
 
-.csv
-.pptx
+*.csv
+*.pptx
 
 
 # Byte-compiled / optimized / DLL files
