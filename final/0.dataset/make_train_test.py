@@ -23,81 +23,74 @@ Email: armand.sauzay@berkeley.edu
 import os 
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+#import seaborn as sns
+#import matplotlib.pyplot as plt
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split
 import bz2
 
-#Change directory to where the data lies (training2nd --> 2nd session of contest)
-os.chdir('/Users/Armand/Capstone/ipinyou.contest.dataset/training2nd')
-
-# 2. Define Parameters
-header_season2_bids=[
-    'Bid ID'
-    ,'Timestamp'
-    ,'iPinYou ID'
-    ,'User-Agent'
-    ,'IP'
-    ,'Region ID'
-    ,'City ID'
-    ,'Ad Exchange'
-    ,'Domain'
-    ,'URL'
-    ,'Anonymous URL'
-    ,'Ad Slot ID'
-    ,'Ad Slot Width'
-    ,'Ad Slot Height'
-    ,'Ad Slot Visibility'
-    ,'Ad Slot Format'
-    ,'Ad Slot Floor Price'
-    ,'Creative ID'
-    ,'Bidding Price'
-    ,'Advertiser ID'
-    ,'User Profile IDs']
-
-header_season2=[
-    'Bid ID'
-    ,'Timestamp'
-    ,'Log Type'
-    ,'iPinYou ID'
-    ,'User-Agent'
-    ,'IP'
-    ,'Region ID'
-    ,'City ID'
-    ,'Ad Exchange'
-    ,'Domain'
-    ,'URL'
-    ,'Anonymous URL'
-    ,'Ad Slot ID'
-    ,'Ad Slot Width'
-    ,'Ad Slot Height'
-    ,'Ad Slot Visibility'
-    ,'Ad Slot Format'
-    ,'Ad Slot Floor Price'
-    ,'Creative ID'
-    ,'Bidding Price'
-    ,'Paying Price'
-    ,'Landing Page URL'
-    ,'Advertiser ID'
-    ,'User Profile IDs']
-
-dates_list=['20130606'
-           , '20130607'
-           , '20130608'
-           , '20130609'
-           , '20130610'
-           , '20130611'
-           , '20130612']
-
-random_state=100
-frac_to_take=0.01
-n_sampling=100000
-
 
 #3. one day data
-def one_day_training_testing(date):
+def make_one_day_dataset(date):
+        #Change directory to where the data lies (training2nd --> 2nd session of contest)
+    os.chdir('/Users/Armand/Capstone/ipinyou.contest.dataset/training2nd')
+
+    # 2. Define Parameters
+    header_season2_bids=[
+        'Bid ID'
+        ,'Timestamp'
+        ,'iPinYou ID'
+        ,'User-Agent'
+        ,'IP'
+        ,'Region ID'
+        ,'City ID'
+        ,'Ad Exchange'
+        ,'Domain'
+        ,'URL'
+        ,'Anonymous URL'
+        ,'Ad Slot ID'
+        ,'Ad Slot Width'
+        ,'Ad Slot Height'
+        ,'Ad Slot Visibility'
+        ,'Ad Slot Format'
+        ,'Ad Slot Floor Price'
+        ,'Creative ID'
+        ,'Bidding Price'
+        ,'Advertiser ID'
+        ,'User Profile IDs']
+
+    header_season2=[
+        'Bid ID'
+        ,'Timestamp'
+        ,'Log Type'
+        ,'iPinYou ID'
+        ,'User-Agent'
+        ,'IP'
+        ,'Region ID'
+        ,'City ID'
+        ,'Ad Exchange'
+        ,'Domain'
+        ,'URL'
+        ,'Anonymous URL'
+        ,'Ad Slot ID'
+        ,'Ad Slot Width'
+        ,'Ad Slot Height'
+        ,'Ad Slot Visibility'
+        ,'Ad Slot Format'
+        ,'Ad Slot Floor Price'
+        ,'Creative ID'
+        ,'Bidding Price'
+        ,'Paying Price'
+        ,'Landing Page URL'
+        ,'Advertiser ID'
+        ,'User Profile IDs']
+
+    random_state=100
+    frac_to_take=0.01
+    n_sampling=100000
+
+
     # READ DATA FOR 1 DAY 
     print('reading data for %s'%date)
     unzipped_file = bz2.BZ2File('bid.'+date+'.txt.bz2', "r")
@@ -168,20 +161,57 @@ def one_day_training_testing(date):
     df=df.sample(n=n_sampling, random_state=random_state)
     return(df)
 
-df_final=one_day_training_testing('20130606')
-for date in dates_list[1:]:    
-    df=one_day_training_testing(date)
-    print('shape of df is %s'%str(df.shape))
-    df_final=df_final.append(df)
-    print('shape of df_final is %s'%str(df_final.shape))
+def make_full_week_dataset(dates_list=['20130606'
+        , '20130607'
+        , '20130608'
+        , '20130609'
+        , '20130610'
+        , '20130611'
+        , '20130612']):
 
-#take mapping for user profile
-#mapping=pd.read_table('/Users/Armand/Capstone/ipinyou.contest.dataset/user.profile.tags.en.txt', names=('key','value'))
+    df_final=one_day_training_testing(dates_list[0])
+    for date in dates_list[1:]:    
+        df=one_day_training_testing(date)
+        print('shape of df is %s'%str(df.shape))
+        df_final=df_final.append(df)
+        print('shape of df_final is %s'%str(df_final.shape))
 
-#dummify user profile
-s=df_final['User Profile IDs_imp'].str.split(pat=',')
-dummies_to_concatenate=pd.get_dummies(s.apply(pd.Series).stack()).sum(level=0)
+    #take mapping for user profile
+    #mapping=pd.read_table('/Users/Armand/Capstone/ipinyou.contest.dataset/user.profile.tags.en.txt', names=('key','value'))
 
-df_dummified = df_final.merge(dummies_to_concatenate, left_index=True, right_index=True, how='left')
+    #dummify user profile
+    s=df_final['User Profile IDs_imp'].str.split(pat=',')
+    dummies_to_concatenate=pd.get_dummies(s.apply(pd.Series).stack()).sum(level=0)
 
-df_dummified.to_csv('/Users/Armand/Capstone/final_training_testing.csv')
+    df_dummified = df_final.merge(dummies_to_concatenate, left_index=True, right_index=True, how='left')
+
+    df_dummified.to_csv('/Users/Armand/Capstone/final_training_testing.csv')
+
+if __name__ == "__main__":
+
+
+    dates_list=['20130606'
+        , '20130607'
+        , '20130608'
+        , '20130609'
+        , '20130610'
+        , '20130611'
+        , '20130612']
+
+    df_final=one_day_training_testing('20130606')
+    for date in dates_list[1:]:    
+        df=one_day_training_testing(date)
+        print('shape of df is %s'%str(df.shape))
+        df_final=df_final.append(df)
+        print('shape of df_final is %s'%str(df_final.shape))
+
+    #take mapping for user profile
+    #mapping=pd.read_table('/Users/Armand/Capstone/ipinyou.contest.dataset/user.profile.tags.en.txt', names=('key','value'))
+
+    #dummify user profile
+    s=df_final['User Profile IDs_imp'].str.split(pat=',')
+    dummies_to_concatenate=pd.get_dummies(s.apply(pd.Series).stack()).sum(level=0)
+
+    df_dummified = df_final.merge(dummies_to_concatenate, left_index=True, right_index=True, how='left')
+
+    df_dummified.to_csv('/Users/Armand/Capstone/final_training_testing.csv')
