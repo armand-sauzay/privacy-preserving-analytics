@@ -32,7 +32,7 @@ from collections import Counter
 
 
 #3. one day data
-def make_one_day_dataset(date, random_state=100, frac_to_take=0.01, n_sampling=100000):
+def make_one_day_dataset(date, random_state=0, frac_to_take=0.01, n_sampling=100000):
     #Change directory to where the data lies (training2nd --> 2nd session of contest)
     data_shapes={}
     os.chdir('/Users/Armand/Capstone/ipinyou.contest.dataset/training2nd')
@@ -137,10 +137,12 @@ def make_one_day_dataset(date, random_state=100, frac_to_take=0.01, n_sampling=1
     #SAMPLE THE DATASET
     #df=df.sample(n=n_sampling, random_state=random_state)
     n_1=df['has click'].sum()
-    n_0=int(0.01*len(df))
+    #print('n_1: %s'%n_1)
+    n_0=int(0.01*(len(df)-n_1))
+    #print('n_0: %s'%n_0)
     X=df.drop(['has click'], axis=1)
     y=df['has click']
-    rus = RandomUnderSampler(sampling_strategy={1:n_1, 0:n_0})
+    rus = RandomUnderSampler(sampling_strategy={1:n_1, 0:n_0}, random_state=0)
     X_res, y_res = rus.fit_resample(X, y)
     print('Resampled dataset shape %s' % Counter(y_res))
     df=pd.concat([X_res,y_res], axis=1)
@@ -148,7 +150,7 @@ def make_one_day_dataset(date, random_state=100, frac_to_take=0.01, n_sampling=1
     #LOG data shapes 
     data_shapes[date]={}
     data_shapes[date]['impression']=len(impressions)
-    data_shapes[date]['impression sampled']=len(df)
+    data_shapes[date]['impression sampled']=len(df)-df['has click'].sum()
 
     data_shapes[date]['clicks']=len(clicks)
     data_shapes[date]['clicks sampled']=df['n_clicks'].sum()
@@ -180,12 +182,12 @@ def make_full_week_dataset(
         #mapping=pd.read_table('/Users/Armand/Capstone/ipinyou.contest.dataset/user.profile.tags.en.txt', names=('key','value'))
 
     #dummify user profile
-    s=df_final['User Profile IDs_impressions'].str.split(pat=',')
-    dummies_to_concatenate=pd.get_dummies(s.apply(pd.Series).stack()).sum(level=0)
+    #s=df_final['User Profile IDs_impressions'].str.split(pat=',')
+    #dummies_to_concatenate=pd.get_dummies(s.apply(pd.Series).stack()).sum(level=0)
 
-    df_dummified = df_final.merge(dummies_to_concatenate, left_index=True, right_index=True, how='left')
+    #df_dummified = df_final.merge(dummies_to_concatenate, left_index=True, right_index=True, how='left')
 
-    df_dummified.to_csv('/Users/Armand/Capstone/privacy-preserving-analytics/final/0.dataset/impression_balanced.csv')
+    df_final.to_csv('/Users/Armand/Capstone/privacy-preserving-analytics/final/0.dataset/impression_balanced_no_dummies.csv')
     return(datashapes_final, df_final)
 
 
